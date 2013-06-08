@@ -57,7 +57,7 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.preference.PreferenceActivity;
+import android.preference.PreferenceDrawerActivity;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.format.Formatter;
@@ -140,6 +140,7 @@ public class InstalledAppDetails extends Fragment
     private Button mClearDataButton;
     private Button mMoveAppButton;
     private CompoundButton mNotificationSwitch;
+    private CompoundButton mThemeCompatibilitySwitch;
 
     private PackageMoveObserver mPackageMoveObserver;
 
@@ -398,6 +399,14 @@ public class InstalledAppDetails extends Fragment
         }
     }
 
+    private void initThemeCompatibilityButton() {
+        boolean enabled = false; // default off
+        enabled = mPm.isThemeCompatibilityModeEnabled(mAppEntry.info.packageName);
+        mThemeCompatibilitySwitch.setChecked(enabled);
+        mThemeCompatibilitySwitch.setEnabled(true);
+        mThemeCompatibilitySwitch.setOnCheckedChangeListener(this);
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle icicle) {
@@ -474,6 +483,8 @@ public class InstalledAppDetails extends Fragment
         mEnableCompatibilityCB = (CheckBox)view.findViewById(R.id.enable_compatibility_cb);
         
         mNotificationSwitch = (CompoundButton) view.findViewById(R.id.notification_switch);
+
+        mThemeCompatibilitySwitch = (CompoundButton) view.findViewById(R.id.theme_compat_mode_switch);
 
         return view;
     }
@@ -887,7 +898,7 @@ public class InstalledAppDetails extends Fragment
         if(localLOGV) Log.i(TAG, "appChanged="+appChanged);
         Intent intent = new Intent();
         intent.putExtra(ManageApplications.APP_CHG, appChanged);
-        PreferenceActivity pa = (PreferenceActivity)getActivity();
+        PreferenceDrawerActivity pa = (PreferenceDrawerActivity)getActivity();
         pa.finishPreferencePanel(this, Activity.RESULT_OK, intent);
     }
     
@@ -977,6 +988,7 @@ public class InstalledAppDetails extends Fragment
             initDataButtons();
             initMoveButton();
             initNotificationButton();
+            initThemeCompatibilityButton();
         } else {
             mMoveAppButton.setText(R.string.moving);
             mMoveAppButton.setEnabled(false);
@@ -1269,6 +1281,13 @@ public class InstalledAppDetails extends Fragment
         }
     }
 
+    private void setThemeCompatibilityEnabled(boolean enabled) {
+        String packageName = mAppEntry.info.packageName;
+        final boolean enable = mThemeCompatibilitySwitch.isChecked();
+        mPm.setThemeCompatibilityMode(packageName, enabled);
+        showDialogInner(DLG_FORCE_STOP, 0);
+    }
+
     private int getPremiumSmsPermission(String packageName) {
         try {
             if (mSmsManager != null) {
@@ -1366,6 +1385,8 @@ public class InstalledAppDetails extends Fragment
             } else {
                 setNotificationsEnabled(true);
             }
+        } else if (buttonView == mThemeCompatibilitySwitch) {
+            setThemeCompatibilityEnabled(isChecked);
         }
     }
 }
